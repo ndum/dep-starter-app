@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DEP Starter App</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; }
+    .container { max-width: 800px; margin: 0 auto; padding: 24px; }
+    h1 { font-size: 1.8rem; margin-bottom: 8px; color: #1a1a2e; }
+    .subtitle { color: #666; margin-bottom: 32px; }
+    .card { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .card h2 { font-size: 1.1rem; color: #333; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .badge { font-size: 0.7rem; padding: 3px 8px; border-radius: 20px; font-weight: 600; }
+    .badge-green { background: #e8f5e9; color: #2e7d32; }
+    .badge-blue { background: #e3f2fd; color: #1565c0; }
+    .badge-orange { background: #fff3e0; color: #e65100; }
+    .data-grid { display: grid; grid-template-columns: 140px 1fr; gap: 8px 16px; font-size: 0.9rem; }
+    .data-grid dt { color: #888; }
+    .data-grid dd { color: #333; font-weight: 500; }
+    .quote-box { font-style: italic; font-size: 1.1rem; color: #444; line-height: 1.6; }
+    .quote-author { color: #888; font-style: normal; margin-top: 8px; }
+    .calc-form { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .calc-form input, .calc-form select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; }
+    .calc-form input { width: 80px; }
+    .calc-form button { padding: 8px 20px; background: #1a1a2e; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; }
+    .calc-result { margin-top: 12px; font-size: 1.2rem; font-weight: 600; color: #1a1a2e; }
+    .error { color: #d32f2f; }
+    .loading { color: #999; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>DEP Starter App</h1>
+    <p class="subtitle">Modul HFI_DEP – Deployment Grundlagen</p>
+
+    <div class="card">
+      <h2>Status <span class="badge badge-green" id="health-badge">...</span></h2>
+      <dl class="data-grid" id="status-data">
+        <dt>Server-Zeit</dt><dd id="s-time" class="loading">Laden...</dd>
+        <dt>Uptime</dt><dd id="s-uptime" class="loading">Laden...</dd>
+        <dt>Hostname</dt><dd id="s-hostname" class="loading">Laden...</dd>
+        <dt>Node Version</dt><dd id="s-node" class="loading">Laden...</dd>
+        <dt>Environment</dt><dd id="s-env" class="loading">Laden...</dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h2>Info <span class="badge badge-blue">Persönlich</span></h2>
+      <dl class="data-grid">
+        <dt>Name</dt><dd id="i-name" class="loading">Laden...</dd>
+        <dt>Klasse</dt><dd id="i-class" class="loading">Laden...</dd>
+        <dt>Hobby</dt><dd id="i-hobby" class="loading">Laden...</dd>
+        <dt>Version</dt><dd id="i-version" class="loading">Laden...</dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h2>Zitat <span class="badge badge-orange">Zufällig</span></h2>
+      <div class="quote-box" id="quote-text">Laden...</div>
+      <div class="quote-author" id="quote-author"></div>
+    </div>
+
+    <div class="card">
+      <h2>Rechner</h2>
+      <div class="calc-form">
+        <input type="number" id="calc-a" placeholder="a" value="42">
+        <select id="calc-op">
+          <option value="add">+</option>
+          <option value="sub">−</option>
+          <option value="mul">×</option>
+          <option value="div">÷</option>
+        </select>
+        <input type="number" id="calc-b" placeholder="b" value="13">
+        <button onclick="calculate()">=</button>
+      </div>
+      <div class="calc-result" id="calc-result"></div>
+    </div>
+  </div>
+
+  <script>
+    async function loadData() {
+      try {
+        const [health, status, info, quote] = await Promise.all([
+          fetch('/api/health').then(r => r.json()),
+          fetch('/api/status').then(r => r.json()),
+          fetch('/api/info').then(r => r.json()),
+          fetch('/api/quote').then(r => r.json()),
+        ]);
+
+        document.getElementById('health-badge').textContent = health.status;
+        document.getElementById('health-badge').className = 'badge badge-green';
+
+        document.getElementById('s-time').textContent = new Date(status.server_time).toLocaleString('de-CH');
+        document.getElementById('s-uptime').textContent = status.uptime_seconds + 's';
+        document.getElementById('s-hostname').textContent = status.hostname;
+        document.getElementById('s-node').textContent = status.node_version;
+        document.getElementById('s-env').textContent = status.environment;
+
+        document.getElementById('i-name').textContent = info.name;
+        document.getElementById('i-class').textContent = info.class;
+        document.getElementById('i-hobby').textContent = info.hobby;
+        document.getElementById('i-version').textContent = info.version;
+
+        document.getElementById('quote-text').textContent = '"' + quote.text + '"';
+        document.getElementById('quote-author').textContent = '— ' + quote.author;
+      } catch (e) {
+        document.getElementById('health-badge').textContent = 'error';
+        document.getElementById('health-badge').className = 'badge';
+        document.getElementById('health-badge').style.background = '#ffebee';
+        document.getElementById('health-badge').style.color = '#c62828';
+      }
+    }
+
+    async function calculate() {
+      const a = document.getElementById('calc-a').value;
+      const b = document.getElementById('calc-b').value;
+      const op = document.getElementById('calc-op').value;
+      try {
+        const res = await fetch(`/api/calc?a=${a}&b=${b}&op=${op}`);
+        const data = await res.json();
+        if (data.error) {
+          document.getElementById('calc-result').innerHTML = '<span class="error">' + data.error + '</span>';
+        } else {
+          document.getElementById('calc-result').textContent = '= ' + data.result;
+        }
+      } catch (e) {
+        document.getElementById('calc-result').innerHTML = '<span class="error">Fehler</span>';
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
